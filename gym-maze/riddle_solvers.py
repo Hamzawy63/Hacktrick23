@@ -2,6 +2,10 @@ from amazoncaptcha import AmazonCaptcha
 from PIL import Image
 import io
 import numpy as np
+from jose import jwt
+from jose import jws
+from jwcrypto import jwk
+import json
 
 def cipher_solver(question):
     return "HaCkTrIcK"
@@ -25,4 +29,19 @@ def pcap_solver(question):
     return "YoUgOtThEsEcReT"
 
 def server_solver(question):
-   return None
+    headers = jwt.get_unverified_header(input)
+    payload = jwt.get_unverified_claims(input)
+    key = headers['jwk']
+    algorithm = headers['alg']
+    kid = headers['jwk']['kid']
+    kty = headers['jwk']['kty']
+    e = headers['jwk']['e']
+
+    key = jwk.JWK.generate(kty=kty, size=512, kid=kid, e=e)
+    private_key = json.loads(key.export_private())
+    public_key = json.loads(key.export_public())
+
+    payload['admin'] = 'true'
+    headers['jwk'] = public_key
+
+    return jws.sign(payload, key=private_key, algorithm=algorithm, headers=headers);
