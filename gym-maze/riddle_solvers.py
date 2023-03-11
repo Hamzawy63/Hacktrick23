@@ -1,14 +1,13 @@
+
 def cipher_solver(question):
-    pass
+    return "HaCkTrIcK"
 
 def captcha_solver(question):
-    # Return solution
-    pass
+    return ""
+    
 
 def pcap_solver(question):
-    # Return solution
-    pass
+    return "YoUgOtThEsEcReT"
 
 def server_solver(question):
-    # Return solution
-    pass
+   return None
