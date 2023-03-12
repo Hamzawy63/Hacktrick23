@@ -1,3 +1,5 @@
+import numpy as np
+import copy
 def logger(obj):
     print(obj)
 
@@ -31,33 +33,50 @@ class DfsAgent():
         directions = state[2] #array of tuples of directions to the rewards
 
 
-        self.stack.append(agent_loc)
-        self.visited[agent_loc] = True
+       
+        logger(self.stack)
+        logger("========```")
+        logger(self.previous_state)
+        logger(state)
+        logger("========```")
 
-        if (self.previous_state == state):
+        if (self.previous_state != None and np.array_equal(self.previous_state[0], state[0])):
+            assert(self.visited[agent_loc] == True)
             logger("The damn state doesn't change")
             other_direction = self.get_destination_from_label()
             self.obstacles.add((agent_location_encoded, other_direction[0] * self.N + other_direction[1]))
             self.obstacles.add((other_direction[0] * self.N + other_direction[1], agent_location_encoded))
+        else: 
+            self.stack.append(agent_loc)
+            self.visited[agent_loc] = True
+
 
 
         available_destinations = self.get_available_destinations(agent_loc)
+        available_destinations = self.sort_destinations(state, available_destinations)
         for destination in available_destinations:
             if (destination not in self.visited):
                 logger("Found unvisited destination: {}".format(destination))
-                self.previous_state = state
+                self.previous_state = copy.deepcopy(state)
+
                 self.prevous_label = self.get_destination_label(agent_loc, destination)
                 return self.get_destination_label(agent_loc, destination)
         
         # If we come here then this means that there are not aviailable directions
 
         self.stack.pop() # remove me
-        print("Going to parent")
+        logger("Popping from stack")
+        logger("Going to parent")
         parent_location = self.stack.pop()
         while (parent_location == agent_loc):
             parent_location = self.stack.pop()
-        self.previous_state = state
-        self.prevous_label = self.get_destination_label(parent_location, agent_loc)
+            Assert(False)
+            logger("Popping from stack")
+
+        # self.previous_state = state[:]
+        self.previous_state = copy.deepcopy(state)
+        self.get_destination_label(agent_loc, parent_location)
+
         return self.get_destination_label(agent_loc, parent_location)
 
 
@@ -67,12 +86,60 @@ class DfsAgent():
         col = current_location[1]
 
         available_destinations = []
-        directions = [[-1, 0], [1, 0], [0, -1], [0, 1]]
+        # west , up ,east, down 
+        directions = [[-1, 0], [0, -1], [0, 1], [1, 0]]
         for direction in directions:
             if (row + direction[0] >= 0 and row + direction[0] < self.N and col + direction[1] >= 0 and col + direction[1] < self.M):
                 if((row * self.N + col, (row + direction[0]) * self.N + (col + direction[1])) not in self.obstacles):
                     available_destinations.append((row + direction[0], col + direction[1]))
         return available_destinations
+    
+    def sort_destinations(self, state, destinations):
+        manhattan_distances = state[1] # relative manhattan distances to the rewards
+        directions = state[2] #array of tuples of directions to the rewards
+        agent_location = (state[0][0], state[0][1])
+        
+        destination_scores = {'N': 0, 'S': 0, 'W': 0, 'E': 0}
+
+        num_of_riddles = len(directions)
+        for i in range(num_of_riddles):
+            if (manhattan_distances[i] != -1):
+                if (directions[i] == [0, 1]):
+                    destination_scores['S'] += 2
+                elif (directions[i] == [0, -1]):
+                    destination_scores['N'] += 2
+                elif (directions[i] == [1, 0]):
+                    destination_scores['E'] += 2
+                elif (directions[i] == [-1, 0]):
+                    destination_scores['W'] += 2
+                elif (directions[i] == [1, 1]):
+                    destination_scores['E'] += 1
+                    destination_scores['S'] += 1
+                elif (directions[i] == [-1, -1]):
+                    destination_scores['W'] += 1
+                    destination_scores['N'] += 1
+                elif (directions[i] == [1, -1]):
+                    destination_scores['E'] += 1
+                    destination_scores['N'] += 1
+                elif (directions[i] == [-1, 1]):
+                    destination_scores['W'] += 1
+                    destination_scores['S'] += 1
+                else:
+                    raise Exception("Unknown direction ya zmely {}".format(directions[i]))
+                
+        def my_comparator(destination):
+            label = self.get_destination_label(agent_location, destination)
+            assert(label in ['N', 'S', 'W', 'E'])
+            return destination_scores[label]
+
+        sorted_list = sorted(destinations, key=my_comparator)
+        
+        return reversed(sorted_list)
+        
+                
+
+
+
 
 
     def get_destination_from_label(self):

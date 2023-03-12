@@ -71,7 +71,7 @@ dfs_agent = DfsAgent()
 
 def select_action(state):
         global step
-        # time.sleep(0.5)
+        # time.sleep(2)
         agent_location = state[0]
         manhattan_distances = state[1] # relative manhattan distances to the rewards
         directions = state[2] #array of tuples of directions to the rewards
@@ -81,6 +81,7 @@ def select_action(state):
         #     time.sleep(5)
         #     exit()
         logger("Step: {}".format(step))
+        logger("State: {}".format(state))
         logger("Agent location: {}".format(agent_location))
         logger("Manhattan distances: {}".format(manhattan_distances))
         logger("Directions: {}".format(directions))
@@ -160,6 +161,7 @@ def local_inference(riddle_solvers):
     obv = manager.reset(agent_id)
 
     for t in range(MAX_T):
+        print("Hamza==============")
         # Select an action
         state_0 = obv
         action, action_index = select_action(state_0) # Random action
@@ -168,6 +170,7 @@ def local_inference(riddle_solvers):
         if not info['riddle_type'] == None:
             solution = riddle_solvers[info['riddle_type']](info['riddle_question'])
             obv, reward, terminated, truncated, info = manager.solve_riddle(info['riddle_type'], agent_id, solution)
+          
 
         # THIS IS A SAMPLE TERMINATING CONDITION WHEN THE AGENT REACHES THE EXIT
         # IMPLEMENT YOUR OWN TERMINATING CONDITION
