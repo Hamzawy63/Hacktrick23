@@ -5,3 +5,4 @@ pip install jwcrypto
 # 4th riddle 
 pip install amazoncaptcha
 sudo pip install Pillow
+pip install scapy 
