@@ -6,17 +6,31 @@ import json
 import requests
 
 from riddle_solvers import *
+from dfs_solver import DfsAgent
 
 ### the api calls must be modified by you according to the server IP communicated with you
 #### students track --> 16.170.85.45
 #### working professionals track --> 13.49.133.141
 server_ip = '13.49.133.141'
 
+def logger(obj):
+    print(obj)
+
+
+dfs_agent = DfsAgent()
+step = 0
+
+
 def select_action(state):
     # This is a random agent 
     # This function should get actions from your trained agent when inferencing.
+
+    global step
+    step = step + 1
+
+
     actions = ['N', 'S', 'E', 'W']
-    random_action = random.choice(actions)
+    random_action = dfs_agent.select_action(state)
     action_index = actions.index(random_action)
     return random_action, action_index
 
@@ -62,14 +76,23 @@ def submission_inference(riddle_solvers):
 
         # THIS IS A SAMPLE TERMINATING CONDITION WHEN THE AGENT REACHES THE EXIT
         # IMPLEMENT YOUR OWN TERMINATING CONDITION
-        if np.array_equal(response.json()['position'], (9,9)):
+
+        is_there_someone_to_rescue = False
+        distances = obv[1]
+
+        for i in range(len(distances)):
+            if distances[i] != -1:
+                is_there_someone_to_rescue = True
+                break
+
+        if np.array_equal(response.json()['position'], (9,9)) and (not is_there_someone_to_rescue):
             response = requests.post(f'http://{server_ip}:5000/leave', json={"agentId": agent_id})
             break
 
 
 if __name__ == "__main__":
     
-    agent_id = "9"
+    agent_id = "GJa15DaXkr"
     riddle_solvers = {'cipher': cipher_solver, 'captcha': captcha_solver, 'pcap': pcap_solver, 'server': server_solver}
     submission_inference(riddle_solvers)
     

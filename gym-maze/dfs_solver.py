@@ -1,7 +1,63 @@
 import numpy as np
 import copy
+
+
 def logger(obj):
     print(obj)
+
+class Graph():
+    # (index1, index2) -> (index1, index2)
+    def __init__(self):
+        self.graph = {}
+
+    def add_edge(self, index1, index2):
+        if (index1 not in self.graph):
+            self.graph[index1] = set()
+        self.graph[index1].add(index2)
+
+        if (index2 not in self.graph):
+            self.graph[index2] = set()
+        self.graph[index2].add(index1)
+
+
+    def find_path_to_end(self,index):
+        N = 10
+        M = 10
+        # Make bfs from index to (N-1, M-1)
+        queue = []
+        queue.append(index)
+        visited = {}
+        visited[index] = True
+        parent = {}
+        parent[index] = None
+
+        Found = False
+        while (len(queue) > 0):
+            current = queue.pop(0)
+            if (current == (N-1, M-1)):
+                Found = True
+                break
+            for neighbor in self.graph[current]:
+                if (neighbor not in visited):
+                    visited[neighbor] = True
+                    parent[neighbor] = current
+                    queue.append(neighbor)
+
+        if (not Found):
+            return []
+        else:
+            path = []
+            current = (N-1, M-1)
+            while (current != index):
+                path.append(current)
+                current = parent[current]
+            
+            # path.append(index)
+            path.reverse()
+        logger(path)
+        return path
+
+
 
 
 class DfsAgent():
@@ -11,44 +67,54 @@ class DfsAgent():
 
         self.previous_state = None
         self.prevous_label = None
-
+        self.graph = Graph()
 
         self.visited = {}
 
         self.N = 10
         self.M = 10
+        self.ENDING = (self.N - 1, self.M - 1)
 
         self.north = 'N'
         self.south = 'S'
         self.west = 'W'
         self.east = 'E'
         
-    def select_action(self, state):
-        
+    def go_to_end(self, state):
+        agent_loc = (state[0][0], state[0][1])
+        logger(agent_loc)
+
+        path = self.graph.find_path_to_end(agent_loc)
+
+        assert(path != [])
+
+        return self.get_destination_label(agent_loc, path[0])
+
+
+    def select_action(self, state):        
         agent_loc = (state[0][0], state[0][1])
         logger(agent_loc)
         agent_location_encoded = (agent_loc[0] * self.N + agent_loc[1])
-
         manhattan_distances = state[1] # relative manhattan distances to the rewards
         directions = state[2] #array of tuples of directions to the rewards
 
 
-       
-        logger(self.stack)
-        logger("========```")
-        logger(self.previous_state)
-        logger(state)
-        logger("========```")
-
         if (self.previous_state != None and np.array_equal(self.previous_state[0], state[0])):
             assert(self.visited[agent_loc] == True)
-            logger("The damn state doesn't change")
+            logger("State doesn't change")
             other_direction = self.get_destination_from_label()
             self.obstacles.add((agent_location_encoded, other_direction[0] * self.N + other_direction[1]))
             self.obstacles.add((other_direction[0] * self.N + other_direction[1], agent_location_encoded))
         else: 
             self.stack.append(agent_loc)
             self.visited[agent_loc] = True
+            if (self.previous_state != None):
+                self.graph.add_edge((self.previous_state[0][0], self.previous_state[0][1]), agent_loc)
+
+        
+        if(state[1][0] == -1 and state[1][1] == -1 and state[1][2] == -1 and state[1][3] == -1):
+            if ( self.ENDING in self.visited):
+                return self.go_to_end(state)
 
 
 
@@ -70,8 +136,8 @@ class DfsAgent():
         parent_location = self.stack.pop()
         while (parent_location == agent_loc):
             parent_location = self.stack.pop()
-            Assert(False)
-            logger("Popping from stack")
+            # Assert(False)
+            logger("UnIntended Popping from stack")
 
         # self.previous_state = state[:]
         self.previous_state = copy.deepcopy(state)
@@ -124,8 +190,8 @@ class DfsAgent():
                 elif (directions[i] == [-1, 1]):
                     destination_scores['W'] += 1
                     destination_scores['S'] += 1
-                else:
-                    raise Exception("Unknown direction ya zmely {}".format(directions[i]))
+                # else:
+                    # raise Exception("Unknown direction ya zmely {}".format(directions[i]))
                 
         def my_comparator(destination):
             label = self.get_destination_label(agent_location, destination)

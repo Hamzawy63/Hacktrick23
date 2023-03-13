@@ -88,20 +88,18 @@ def pcap_solver(question):
 
 
 def server_solver(question):
-    pass
-    # headers = jwt.get_unverified_header(question)
-    # payload = jwt.get_unverified_claims(question)
-    # key = headers['jwk']
-    # algorithm = headers['alg']
-    # kid = headers['jwk']['kid']
-    # kty = headers['jwk']['kty']
-    # e = headers['jwk']['e']
+    headers = jwt.get_unverified_header(question)
+    payload = jwt.get_unverified_claims(question)
+    key = headers['jwk']
+    algorithm = headers['alg']
+    kid = headers['jwk']['kid']
+    kty = headers['jwk']['kty']
+    e = headers['jwk']['e']
 
-    # key = jwk.JWK.generate(kty=kty, size=512, kid=kid, e=e)
-    # private_key = json.loads(key.export_private())
-    # public_key = json.loads(key.export_public())
+    key = jwk.JWK.generate(kty=kty, size=512, kid=kid, e=e)
+    private_key = json.loads(key.export_private())
+    public_key = json.loads(key.export_public())
 
-    # payload['admin'] = 'true'
-    # headers['jwk'] = public_key
-
-    # return jws.sign(payload, key=private_key, algorithm=algorithm, headers=headers)
+    payload['admin'] = 'true'
+    headers['jwk'] = public_key
+    return jws.sign(payload, key=private_key, algorithm=algorithm, headers=headers)
