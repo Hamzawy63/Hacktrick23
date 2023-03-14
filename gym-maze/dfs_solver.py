@@ -86,7 +86,8 @@ class DfsAgent():
 
         path = self.graph.find_path_to_end(agent_loc)
 
-        assert(path != [])
+        if (path == []):
+            logger("Found an empty path: " + str(path))
 
         return self.get_destination_label(agent_loc, path[0])
 
@@ -100,7 +101,8 @@ class DfsAgent():
 
 
         if (self.previous_state != None and np.array_equal(self.previous_state[0], state[0])):
-            assert(self.visited[agent_loc] == True)
+            if (self.visited[agent_loc] != True):
+                logger("Error:Found a state that isn't visited but it's the same as the previous state {}".format(agent_loc))
             logger("State doesn't change")
             other_direction = self.get_destination_from_label()
             self.obstacles.add((agent_location_encoded, other_direction[0] * self.N + other_direction[1]))
@@ -111,11 +113,17 @@ class DfsAgent():
             if (self.previous_state != None):
                 self.graph.add_edge((self.previous_state[0][0], self.previous_state[0][1]), agent_loc)
 
+        logger(state)
+        all_are_visited = True
+        for s in state[1]:
+            if (s != -1 ):
+                all_are_visited = False
         
-        if(state[1][0] == -1 and state[1][1] == -1 and state[1][2] == -1 and state[1][3] == -1):
-            if ( self.ENDING in self.visited):
+        if (all_are_visited):
+             if ( self.ENDING in self.visited):
                 return self.go_to_end(state)
 
+           
 
 
         available_destinations = self.get_available_destinations(agent_loc)
@@ -167,9 +175,11 @@ class DfsAgent():
         
         destination_scores = {'N': 0, 'S': 0, 'W': 0, 'E': 0}
 
+        all_are_visited = True
         num_of_riddles = len(directions)
         for i in range(num_of_riddles):
             if (manhattan_distances[i] != -1):
+                all_are_visited = False
                 if (directions[i] == [0, 1]):
                     destination_scores['S'] += 2
                 elif (directions[i] == [0, -1]):
@@ -192,10 +202,15 @@ class DfsAgent():
                     destination_scores['S'] += 1
                 # else:
                     # raise Exception("Unknown direction ya zmely {}".format(directions[i]))
+
+        if (all_are_visited):
+            destination_scores['S'] += 1
+            destination_scores['E'] += 1
                 
         def my_comparator(destination):
             label = self.get_destination_label(agent_location, destination)
-            assert(label in ['N', 'S', 'W', 'E'])
+            if(not (label in ['N', 'S', 'W', 'E'])):
+                logger("in my_comparator Error: label is not in ['N', 'S', 'W', 'E']")
             return destination_scores[label]
 
         sorted_list = sorted(destinations, key=my_comparator)
@@ -219,7 +234,7 @@ class DfsAgent():
             return (self.previous_state[0][0] + 1 , self.previous_state[0][1] )
         else:
             logger(self.prevous_label)
-            raise Exception("Unknown direction")
+            logger("Error in get_destination_from_label: Unknown direction {}".format(self.prevous_label))
 
     # gets the location and the destination and returns the label
     def get_destination_label(self, src, dst):
@@ -234,4 +249,4 @@ class DfsAgent():
             return self.south
         else:
             logger(diff)
-            raise Exception("Unknown direction")
+            logger("Error in get_destination_label: Unknown direction {}".format(diff))

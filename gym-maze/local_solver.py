@@ -20,7 +20,7 @@ dfs_agent = DfsAgent()
 step = 0
 def select_action(state):
         global step
-        time.sleep(0.05)
+        # time.sleep(0.05)
         agent_location = state[0]
         manhattan_distances = state[1] # relative manhattan distances to the rewards
         directions = state[2] #array of tuples of directions to the rewards
@@ -49,6 +49,11 @@ def select_action(state):
 
 
 def local_inference(riddle_solvers):
+    # lives_saved = 0
+    # riddles_scores = 0 
+    # actions = 0
+    # time_taken = 0
+    # total_score = (lives_saved * 1000)/actions + riddles_scores/(time_taken*10) 
 
     obv = manager.reset(agent_id)
 
@@ -91,6 +96,7 @@ def local_inference(riddle_solvers):
 
         states[t] = [obv[0].tolist(), action_index, str(manager.get_rescue_items_status(agent_id))]       
         
+    # print("Done: score", manager.get_score(agent_id))
 
 
 if __name__ == "__main__":
@@ -122,4 +128,5 @@ if __name__ == "__main__":
     
     with open("./maze.json", "w") as file:
         json.dump(maze, file)
+
     
