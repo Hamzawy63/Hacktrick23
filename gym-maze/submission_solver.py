@@ -11,7 +11,10 @@ from dfs_solver import DfsAgent
 ### the api calls must be modified by you according to the server IP communicated with you
 #### students track --> 16.170.85.45
 #### working professionals track --> 13.49.133.141
+
 server_ip = '13.49.133.141'
+# server_ip = '127.0.0.1'
+
 
 def logger(obj):
     print(obj)
@@ -27,7 +30,7 @@ def select_action(state):
 
     global step
     step = step + 1
-
+    logger("Step: {}".format(step))
 
     actions = ['N', 'S', 'E', 'W']
     random_action = dfs_agent.select_action(state)
@@ -85,6 +88,10 @@ def submission_inference(riddle_solvers):
                 is_there_someone_to_rescue = True
                 break
 
+        # if not is_there_someone_to_rescue:
+        #     response = requests.post(f'http://{server_ip}:5000/leave', json={"agentId": agent_id})
+        #     break
+                
         if np.array_equal(response.json()['position'], (9,9)) and (not is_there_someone_to_rescue):
             response = requests.post(f'http://{server_ip}:5000/leave', json={"agentId": agent_id})
             break

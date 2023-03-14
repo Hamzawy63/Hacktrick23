@@ -203,10 +203,7 @@ class DfsAgent():
                 # else:
                     # raise Exception("Unknown direction ya zmely {}".format(directions[i]))
 
-        if (all_are_visited):
-            destination_scores['S'] += 1
-            destination_scores['E'] += 1
-                
+
         def my_comparator(destination):
             label = self.get_destination_label(agent_location, destination)
             if(not (label in ['N', 'S', 'W', 'E'])):
