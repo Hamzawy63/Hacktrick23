@@ -1,3 +1,6 @@
+import copy
+from queue import PriorityQueue
+
 def logger(obj):
     print(obj)
 
@@ -16,43 +19,44 @@ class Graph():
                         self.add_bi_edge((i, j), (x, y))
 
     def add_bi_edge(self, u, v):
-        
         if (u not in self.graph):
-            self.graph[u] = set()
+            self.graph[u] = {}
 
         if (v not in self.graph):
-            self.graph[v] = set()
+            self.graph[v] = {}
 
-        self.graph[u].add(v)
-        self.graph[v].add(u)
+        self.graph[u][v] = 2
+        self.graph[v][u] = 2
 
     def remove_edge(self, u, v):
-       
-
         assert(u in self.graph)
         assert(v in self.graph)
         if (not (u in self.graph[v]) and (v in self.graph[u])):
             logger("Error: Removing a non-existent edge Or a directed edge")
             return
-
-        self.graph[u].remove(v)
-        self.graph[v].remove(u)
+        
+        print(u, v)
+        
+        del self.graph[u][v]
+        del self.graph[v][u]
 
     def get_neighbours(self, u):
         return self.graph[u]
-
+    
+    def visite(self, u, v):
+        self.graph[u][v] = 1
+        self.graph[v][u] = 1
 
 
 class BfsAgent():
     def __init__(self):
-        self.obstacles = set() # (index1, index2) 
 
         self.graph = Graph()
 
         self.candidates = [set() for i in range(4)]
 
         self.previous_state = None
-        self.prevous_label = None
+        self.previous_label = None
 
         self.N = 10
         self.M = 10
@@ -84,18 +88,21 @@ class BfsAgent():
             while(sz > 0):
                 cur = queue.pop(0)
 
-                for adj in self.graph.get_neighbours(cur):
-                    if (adj not in visited):
-                        queue.append(adj)
-                        visited.add(adj)
+                for dir in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                    x = cur[0] + dir[0]
+                    y = cur[1] + dir[1]
+                    if (x >= 0 and x < self.N and y >= 0 and y < self.M):
+                        adj = (x, y)
+                        if (adj not in visited):
+                            queue.append(adj)
+                            visited.add(adj)
 
                 sz -=1
-
             steps +=1
         
 
         # Now we have all the locations that are at manhattan distance from the agent
-        while (len(queue) != 0):
+        while len(queue) != 0:
             cur = queue.pop(0)
             if (self.valid_orientation(agent_loc, cur, direction)):
                 potential_destinations.add(cur)
@@ -108,62 +115,75 @@ class BfsAgent():
                 return False
         return True        
 
-    def select_action(self,state):
+    def get_median(self, candidate):
+        if (len(candidate) == 0):
+            return (-1, -1)
+        candidate = list(candidate)
+        sorted(candidate)
+        return candidate[int(len(candidate) / 2)]
+
+    def select_action(self, state):
         agent_loc = (state[0][0], state[0][1])
-        direction = state[1]
-        manhattan_distances = state[2]
+        manhattan_distances = state[1]
+        directions = state[2]
 
-        agent_previous_location = (self.previous_state[0][0], self.previous_state[0][1])
-
-        if (self.previous_state != None and agent_loc == agent_previous_location):
-            self.graph.remove_edge(agent_loc, agent_previous_location)
+        if self.previous_state != None and agent_loc == (self.previous_state[0][0], self.previous_state[0][1]):
+            self.graph.remove_edge(agent_loc, self.get_destination_from_label())
         
 
         # don't forget to store the previous state
         for i in range(4):
-            potential_destinations = self.get_potential_destinations(agent_loc, direction[i], manhattan_distances[i])
-
+            potential_destinations = self.get_potential_destinations(agent_loc, directions[i], manhattan_distances[i])
+            
             if (len(self.candidates[i]) == 0):
                 self.candidates[i] = potential_destinations
             else:
                 self.candidates[i] = self.candidates[i].intersection(potential_destinations) #wrong ?
-
+            
+            print(self.candidates[i])
         
         # Bfs to find 
-        queue = []
-        queue.append(agent_loc)
-        visited = {}
+        queue = PriorityQueue()
+        queue.put((0, agent_loc))
         parent = {agent_loc: None}
 
         target = None
-        while (len(queue) > 0):
-            sz = len(queue)
+        while (queue.qsize() > 0):
+            sz = queue.qsize()
+            finished = False
             while (sz > 0):
-                current = queue.pop(0)
+                (cost, current) = queue.get()
                 
-                if (current in self.candidates[0] 
-                    or current in self.candidates[1] 
-                    or current in self.candidates[2] 
-                    or current in self.candidates[3]
-                    or (current == self.ENDING and self.all_riddles_visited(manhattan_distances) )):
+                if (current == self.get_median(self.candidates[0]) 
+                    or current == self.get_median(self.candidates[1]) 
+                    or current == self.get_median(self.candidates[2]) 
+                    or current == self.get_median(self.candidates[3]) 
+                    or (current == self.ENDING and self.all_riddles_visited(manhattan_distances))):
 
                     target = current
+                    finished = True
                     break
-                for neighbor in self.graph.get_neighbours(current):
+                neighbors = self.graph.get_neighbours(current)
+                for neighbor in neighbors:
                     if (neighbor not in parent):
                         parent[neighbor] = current
-                        queue.append(neighbor)
+                        queue.put((cost + neighbors[neighbor], neighbor))
 
                 sz -= 1
+            if finished:
+                break
 
         if (target != None):
             # get the parent and the direction 
             next_node = target
             while (parent[next_node] != agent_loc):
                 next_node = parent[next_node]
-        
-            self.previous_state = state
+
+            print('target:', target)
+            
+            self.previous_state = copy.deepcopy(state)
             self.previous_label = self.get_destination_label(agent_loc, next_node)
+            self.graph.visite(next_node, agent_loc)
             return self.previous_label
         else:
             assert(False)
@@ -203,6 +223,18 @@ class BfsAgent():
         elif (direction == [-1, 1]): # SW
             return agent_loc[0] > destination[0] and agent_loc[1] < destination[1]
         else:
-            # Identical positions
-            return True
+            AssertionError()
+        
+    def get_destination_from_label(self):
+        if (self.previous_label == self.north):
+            return (self.previous_state[0][0] , self.previous_state[0][1] - 1)
+        elif (self.previous_label == self.south):
+            return (self.previous_state[0][0] , self.previous_state[0][1] + 1 )
+        elif (self.previous_label == self.west):
+            return (self.previous_state[0][0] - 1 , self.previous_state[0][1] )
+        elif (self.previous_label == self.east):
+            return (self.previous_state[0][0] + 1 , self.previous_state[0][1] )
+        else:
+            logger(self.previous_label)
+            raise Exception("Unknown direction")
         
