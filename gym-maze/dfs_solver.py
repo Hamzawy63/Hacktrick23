@@ -46,6 +46,7 @@ class Graph():
         if (not Found):
             return []
         else:
+            logger("Found a path to the end protocol activated! ")
             path = []
             current = (N-1, M-1)
             while (current != index):
@@ -99,9 +100,10 @@ class DfsAgent():
         manhattan_distances = state[1] # relative manhattan distances to the rewards
         directions = state[2] #array of tuples of directions to the rewards
 
+        # self.check_saved_lives(state)
 
         if (self.previous_state != None and np.array_equal(self.previous_state[0], state[0])):
-            if (self.visited[agent_loc] != True):
+            if ((agent_loc not in self.visited) or self.visited[agent_loc] != True):
                 logger("Error:Found a state that isn't visited but it's the same as the previous state {}".format(agent_loc))
             logger("State doesn't change")
             other_direction = self.get_destination_from_label()
@@ -173,7 +175,7 @@ class DfsAgent():
         directions = state[2] #array of tuples of directions to the rewards
         agent_location = (state[0][0], state[0][1])
         
-        destination_scores = {'N': 0, 'S': 0, 'W': 0, 'E': 0}
+        destination_scores = {'N': 1000, 'S': 1000, 'W': 1000, 'E': 1000}
 
         all_are_visited = True
         num_of_riddles = len(directions)
@@ -181,29 +183,32 @@ class DfsAgent():
             if (manhattan_distances[i] != -1):
                 all_are_visited = False
                 if (directions[i] == [0, 1]):
-                    destination_scores['S'] += 2
+                    destination_scores['S'] = 3 * manhattan_distances[i]
                 elif (directions[i] == [0, -1]):
-                    destination_scores['N'] += 2
+                    destination_scores['N'] = manhattan_distances[i]
                 elif (directions[i] == [1, 0]):
-                    destination_scores['E'] += 2
+                    destination_scores['E'] = 3 * manhattan_distances[i]
                 elif (directions[i] == [-1, 0]):
-                    destination_scores['W'] += 2
+                    destination_scores['W'] = manhattan_distances[i]
                 elif (directions[i] == [1, 1]):
-                    destination_scores['E'] += 1
-                    destination_scores['S'] += 1
+                    destination_scores['E'] = 4 * manhattan_distances[i]
+                    destination_scores['S'] = 4 * manhattan_distances[i]
                 elif (directions[i] == [-1, -1]):
-                    destination_scores['W'] += 1
-                    destination_scores['N'] += 1
+                    destination_scores['W'] = 2 * manhattan_distances[i]
+                    destination_scores['N'] = 2 * manhattan_distances[i]
                 elif (directions[i] == [1, -1]):
-                    destination_scores['E'] += 1
-                    destination_scores['N'] += 1
+                    destination_scores['E'] = 4 * manhattan_distances[i]
+                    destination_scores['N'] = 2 * manhattan_distances[i]
                 elif (directions[i] == [-1, 1]):
-                    destination_scores['W'] += 1
-                    destination_scores['S'] += 1
+                    destination_scores['W'] = 2 * manhattan_distances[i]
+                    destination_scores['S'] = 4 * manhattan_distances[i]
                 # else:
                     # raise Exception("Unknown direction ya zmely {}".format(directions[i]))
 
-
+        if (all_are_visited):
+            destination_scores['S'] = 1
+            destination_scores['E'] = 1
+                
         def my_comparator(destination):
             label = self.get_destination_label(agent_location, destination)
             if(not (label in ['N', 'S', 'W', 'E'])):
@@ -212,7 +217,7 @@ class DfsAgent():
 
         sorted_list = sorted(destinations, key=my_comparator)
         
-        return reversed(sorted_list)
+        return sorted_list;
         
                 
 
@@ -247,3 +252,22 @@ class DfsAgent():
         else:
             logger(diff)
             logger("Error in get_destination_label: Unknown direction {}".format(diff))
+
+    def check_saved_lives(self, state):
+        if(self.previous_state == None):
+            return
+        number_of_lives = 0 
+        for i in range(len(state[1])):
+            if (state[1][i] == -1):
+                number_of_lives += 1
+
+        for i in range(len(self.previous_state[1])):
+            if(self.previous_state[1][i] == -1):
+                number_of_lives -= 1
+        
+        if (number_of_lives > 0):
+            logger("Reset visitgging   ")
+            have_we_go_to_end = (self.N-1, self.M-1) in self.visited
+            self.visited = {}
+            if (have_we_go_to_end):
+                self.visited[(self.N-1, self.M-1)] = True

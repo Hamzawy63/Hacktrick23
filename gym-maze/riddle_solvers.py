@@ -10,10 +10,11 @@ import json
 import base64
 from io import BytesIO
 from scapy.all import RawPcapReader, rdpcap, DNS, UDP, IP
+from bisect import insort_right
 
 def cipher_solver(question):
     encoded_string = question
-    padding = len(encoded_string) % 4
+    padding = len(encoded_string) & 3
     if padding != 0:
         encoded_string += '=' * (4 - padding)
 
@@ -62,44 +63,29 @@ def captcha_solver(question):
 def pcap_solver(question):
     decoded_data = base64.b64decode(question)
 
-    packets = rdpcap(BytesIO(decoded_data))
-    
-    dns_packets = [pkt for pkt in packets if UDP in pkt and pkt[UDP].dport == 53 and pkt[IP].dst == '188.68.45.12']
-
-    sent_data = []
-    # Process each DNS packet
-    for packet in dns_packets:
-        # Extract DNS information from the packet
-        dns = packet[DNS]
-        sent_data.append(f"{dns.qd.qname.decode()}")
-
     required_portions = []
-    for item in sent_data:
-        cnt, dta = item.split('.')[:2]
-        rank = int(base64.b64decode(cnt + '=' * (4 - len(cnt) % 4)).decode('utf-8'))
-        decoded_secret = base64.b64decode(dta + '=' * (4 - len(dta) % 4)).decode('utf-8')
-        required_portions.append([rank, decoded_secret])
+    for pkt in rdpcap(BytesIO(decoded_data)):
+        if UDP in pkt and pkt[UDP].dport == 53 and pkt[IP].dst == '188.68.45.12':
+            dns = pkt[DNS].qd.qname.decode()
+            cnt, dta = dns.split('.')[:2]
+            rank = int(base64.b64decode(cnt + '=' * (4 - (len(cnt) & 3))).decode('utf-8'))
+            decoded_secret = base64.b64decode(dta + '=' * (4 - (len(dta) & 3))).decode('utf-8')
+            insort_right(required_portions, (rank, decoded_secret))
 
-    result = ''
-    for _, plain in sorted(required_portions, key=lambda x: x[0]):
-        result += plain
-    
-    return result
+    return ''.join([portion[1] for portion in required_portions])
 
 
 def server_solver(question):
     headers = jwt.get_unverified_header(question)
     payload = jwt.get_unverified_claims(question)
-    key = headers['jwk']
-    algorithm = headers['alg']
-    kid = headers['jwk']['kid']
-    kty = headers['jwk']['kty']
-    e = headers['jwk']['e']
 
-    key = jwk.JWK.generate(kty=kty, size=512, kid=kid, e=e)
-    private_key = json.loads(key.export_private())
-    public_key = json.loads(key.export_public())
+    # We don't need to generate a new key pair every time. So we just fixed a the pair of (private_key, public_key) 
+    private_key = {'d': 'gsqMAw5ppfg1jEmHhiadjN1ThQnjUQdNbFE9R6oagPJWrOd9_8pB7e8I_kigeaT3JOK0wi5txSS8nRvfi9n5YQ', 'dp': 'u862hZE6hEjW2urFKQ2x5ArG3fHmfH8C0Ovo6Ndf2gk', 'dq': 'ikUDZNe9fM0emzuKsTknKg3i-PhNNBr_CqyMmF7ig00', 'e': 'AQAB', 'kid': '92c5a551-261e-4999-8d23-0235a8653561', 'kty': 'RSA', 'n': 'kg9MIJrccyKgAfNC9VbijYorgpoFphAZNjvWwUcR1leDocH6HJqT3AY6pCZd-g0UP46zQyFQmQigFVyApfR8Fw', 'p': 'wqtFGpBX_zQsuzYv0Rvrx1m3GS7ohaLU-unZBz6gj5k', 'q': 'wBOFl_wbEbFhk66NLHZASTd-lqEFDHLsa5bxlP3Kdy8', 'qi': 'gBiU7QN4XUd3ZZ6I2KJLqivOHER8GuUrbFnjJKLx-Rg'}
+    public_key = {'e': 'AQAB', 'kid': '92c5a551-261e-4999-8d23-0235a8653561', 'kty': 'RSA', 'n': 'kg9MIJrccyKgAfNC9VbijYorgpoFphAZNjvWwUcR1leDocH6HJqT3AY6pCZd-g0UP46zQyFQmQigFVyApfR8Fw'}
 
     payload['admin'] = 'true'
     headers['jwk'] = public_key
-    return jws.sign(payload, key=private_key, algorithm=algorithm, headers=headers)
+    headers['kid'] = public_key['kid']
+
+    return jws.sign(payload, key=private_key, algorithm="RS256", headers=headers);
+   

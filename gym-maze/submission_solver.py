@@ -13,7 +13,6 @@ from dfs_solver import DfsAgent
 #### working professionals track --> 13.49.133.141
 
 server_ip = '13.49.133.141'
-# server_ip = '127.0.0.1'
 
 
 def logger(obj):

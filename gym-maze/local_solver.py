@@ -20,7 +20,7 @@ dfs_agent = DfsAgent()
 step = 0
 def select_action(state):
         global step
-        time.sleep(0.05)
+        # time.sleep(0.05)
         agent_location = state[0]
         manhattan_distances = state[1] # relative manhattan distances to the rewards
         directions = state[2] #array of tuples of directions to the rewards
