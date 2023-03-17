@@ -10,17 +10,20 @@ import gym
 import gym_maze
 from gym_maze.envs.maze_manager import MazeManager
 from riddle_solvers import *
-from dfs_solver import DfsAgent
+from dfs_solver_efficient import BfsAgent
 
 def logger(obj):
     print(obj)
 
 
-dfs_agent = DfsAgent()
+dfs_agent = BfsAgent()
 step = 0
+
+pivot_step = -1
 def select_action(state):
         global step
-        # time.sleep(0.05)
+        global pivot_step
+        # time.sleep(0.20)
         agent_location = state[0]
         manhattan_distances = state[1] # relative manhattan distances to the rewards
         directions = state[2] #array of tuples of directions to the rewards
@@ -40,6 +43,17 @@ def select_action(state):
         actions = ['N', 'S', 'E', 'W']
         
         action_index = actions.index(action)
+
+        if (pivot_step == -1):
+            ok = True
+            for candidate in  dfs_agent.candidates:
+                if (len(candidate) > 1 ):
+                    ok = False
+                    break
+            
+            if (ok):
+                pivot_step = step
+
 
     
 
@@ -75,8 +89,6 @@ def local_inference(riddle_solvers):
             solution = riddle_solvers[info['riddle_type']](info['riddle_question'])
             obv, reward, terminated, truncated, info = manager.solve_riddle(info['riddle_type'], agent_id, solution)
 
-       
-          
 
         # THIS IS A SAMPLE TERMINATING CONDITION WHEN THE AGENT REACHES THE EXIT
         # IMPLEMENT YOUR OWN TERMINATING CONDITION
@@ -94,7 +106,11 @@ def local_inference(riddle_solvers):
         if RENDER_MAZE:
             manager.render(agent_id)
 
-        states[t] = [obv[0].tolist(), action_index, str(manager.get_rescue_items_status(agent_id))]       
+        states[t] = [obv[0].tolist(), action_index, str(manager.get_rescue_items_status(agent_id))]
+
+        print("Finished in pivto_step: ", pivot_step)
+
+
         
     # print("Done: score", manager.get_score(agent_id))
 

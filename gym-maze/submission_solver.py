@@ -6,20 +6,23 @@ import json
 import requests
 
 from riddle_solvers import *
-from dfs_solver import DfsAgent
+from dfs_solver_efficient import BfsAgent
 
 ### the api calls must be modified by you according to the server IP communicated with you
 #### students track --> 16.170.85.45
 #### working professionals track --> 13.49.133.141
 
 server_ip = '13.49.133.141'
+# server_ip = '127.0.0.1'
+# server_ip = '34.165.238.24'
 
 
 def logger(obj):
-    print(obj)
+    # print(obj)
+    pass
 
 
-dfs_agent = DfsAgent()
+dfs_agent = BfsAgent()
 step = 0
 
 
@@ -43,7 +46,7 @@ def move(agent_id, action):
 
 def solve(agent_id,  riddle_type, solution):
     response = requests.post(f'http://{server_ip}:5000/solve', json={"agentId": agent_id, "riddleType": riddle_type, "solution": solution}) 
-    print(response.json()) 
+    logger(response.json()) 
     return response
 
 def get_obv_from_response(response):
@@ -65,11 +68,11 @@ def submission_inference(riddle_solvers):
         action, action_index = select_action(state_0) # Random action
         response = move(agent_id, action)
         if not response.status_code == 200:
-            print(response)
+            logger(response)
             break
 
         obv = get_obv_from_response(response)
-        print(response.json())
+        logger(response.json())
 
         if not response.json()['riddleType'] == None:
             solution = riddle_solvers[response.json()['riddleType']](response.json()['riddleQuestion'])
@@ -98,7 +101,7 @@ def submission_inference(riddle_solvers):
 
 if __name__ == "__main__":
     
-    agent_id = "GJa15DaXkr"
+    agent_id = "2uV5bMhG1k" # new agent id 
     riddle_solvers = {'cipher': cipher_solver, 'captcha': captcha_solver, 'pcap': pcap_solver, 'server': server_solver}
     submission_inference(riddle_solvers)
     
