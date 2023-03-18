@@ -29,8 +29,6 @@ class Graph():
         self.graph[v][u] = 2
 
     def remove_edge(self, u, v):
-        assert(u in self.graph)
-        assert(v in self.graph)
         if (not (u in self.graph[v]) and (v in self.graph[u])):
             logger("Error: Removing a non-existent edge Or a directed edge")
             return
@@ -182,8 +180,7 @@ class BfsAgent():
             self.graph.visite(next_node, agent_loc)
             return self.previous_label
         else:
-            assert(False)
-
+           print("Error: UnExpected behaviour: We expect the target to be found")
 
     
     def get_destination_label(self, src, dst):
@@ -198,7 +195,7 @@ class BfsAgent():
             return self.south
         else:
             logger(diff)
-            logger("Error in get_destination_label: Unknown direction {}".format(diff))
+            print("Error in get_destination_label: Unknown direction {}".format(diff))
         
 
     def valid_orientation(self, agent_loc, destination, direction):
@@ -219,7 +216,7 @@ class BfsAgent():
         elif (direction == [-1, 1]): # SW
             return agent_loc[0] > destination[0] and agent_loc[1] < destination[1]
         else:
-            AssertionError()
+            print("Error in valid_orientation: Unknown direction {}".format(direction))
         
     def get_destination_from_label(self):
         if (self.previous_label == self.north):
@@ -232,5 +229,5 @@ class BfsAgent():
             return (self.previous_state[0][0] + 1 , self.previous_state[0][1] )
         else:
             logger(self.previous_label)
-            raise Exception("Unknown direction")
+            print("Error in get_destination_from_label: Unknown direction {}".format(self.previous_label))
         
