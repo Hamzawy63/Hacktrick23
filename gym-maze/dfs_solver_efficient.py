@@ -25,8 +25,8 @@ class Graph():
         if (v not in self.graph):
             self.graph[v] = {}
 
-        self.graph[u][v] = 1.5
-        self.graph[v][u] = 1.5
+        self.graph[u][v] = 2
+        self.graph[v][u] = 2
 
     def remove_edge(self, u, v):
         assert(u in self.graph)
@@ -35,70 +35,7 @@ class Graph():
             logger("Error: Removing a non-existent edge Or a directed edge")
             return
         
-        if u[0] == v[0]:
-            if u[0] > 0:
-                new_u = (u[0] - 1, u[1])
-                new_v = (v[0] - 1, v[1])
-                if new_v in self.graph[new_u] and self.graph[new_u][new_v] > 1:
-                    self.graph[new_u][new_v] += 0.25
-                if new_u in self.graph[new_v] and self.graph[new_v][new_u] > 1:
-                    self.graph[new_v][new_u] += 0.25
-                if new_u in self.graph[u] and self.graph[u][new_u] > 1:
-                    self.graph[u][new_u] += 0.25
-                if  u in self.graph[new_u] and self.graph[new_u][u] > 1:
-                    self.graph[new_u][u] += 0.25
-                if new_v in self.graph[v] and self.graph[v][new_v] > 1:
-                    self.graph[v][new_v] += 0.25
-                if v in self.graph[new_v] and self.graph[new_v][v] > 1:
-                    self.graph[new_v][v] += 0.25
-            if u[0] < self.N - 1:
-                new_u = (u[0] + 1, u[1])
-                new_v = (v[0] + 1, v[1])
-                if new_v in self.graph[new_u] and self.graph[new_u][new_v] > 1:
-                    self.graph[new_u][new_v] += 0.25
-                if new_u in self.graph[new_v] and self.graph[new_v][new_u] > 1:
-                    self.graph[new_v][new_u] += 0.25
-                if new_u in self.graph[u] and self.graph[u][new_u] > 1:
-                    self.graph[u][new_u] += 0.25
-                if  u in self.graph[new_u] and self.graph[new_u][u] > 1:
-                    self.graph[new_u][u] += 0.25
-                if new_v in self.graph[v] and self.graph[v][new_v] > 1:
-                    self.graph[v][new_v] += 0.25
-                if v in self.graph[new_v] and self.graph[new_v][v] > 1:
-                    self.graph[new_v][v] += 0.25
-            
-        else:
-            assert(u[1] == v[1])
-            if u[1] > 0:
-                new_u = (u[0], u[1] - 1)
-                new_v = (v[0], v[1] - 1)
-                if new_v in self.graph[new_u] and self.graph[new_u][new_v] > 1:
-                    self.graph[new_u][new_v] += 0.25
-                if new_u in self.graph[new_v] and self.graph[new_v][new_u] > 1:
-                    self.graph[new_v][new_u] += 0.25
-                if new_u in self.graph[u] and self.graph[u][new_u] > 1:
-                    self.graph[u][new_u] += 0.25
-                if  u in self.graph[new_u] and self.graph[new_u][u] > 1:
-                    self.graph[new_u][u] += 0.25
-                if new_v in self.graph[v] and self.graph[v][new_v] > 1:
-                    self.graph[v][new_v] += 0.25
-                if v in self.graph[new_v] and self.graph[new_v][v] > 1:
-                    self.graph[new_v][v] += 0.25
-            if u[1] < self.M - 1:
-                new_u = (u[0], u[1] + 1)
-                new_v = (v[0], v[1] + 1)
-                if new_v in self.graph[new_u] and self.graph[new_u][new_v] > 1:
-                    self.graph[new_u][new_v] += 0.25
-                if new_u in self.graph[new_v] and self.graph[new_v][new_u] > 1:
-                    self.graph[new_v][new_u] += 0.25
-                if new_u in self.graph[u] and self.graph[u][new_u] > 1:
-                    self.graph[u][new_u] += 0.25
-                if  u in self.graph[new_u] and self.graph[new_u][u] > 1:
-                    self.graph[new_u][u] += 0.25
-                if new_v in self.graph[v] and self.graph[v][new_v] > 1:
-                    self.graph[v][new_v] += 0.25
-                if v in self.graph[new_v] and self.graph[new_v][v] > 1:
-                    self.graph[new_v][v] += 0.25
+        logger("removed {}, {}".format(u, v))
         
         del self.graph[u][v]
         del self.graph[v][u]
@@ -161,7 +98,6 @@ class BfsAgent():
                             visited.add(adj)
 
                 sz -=1
-
             steps +=1
         
 
@@ -203,9 +139,7 @@ class BfsAgent():
                 self.candidates[i] = potential_destinations
             else:
                 self.candidates[i] = self.candidates[i].intersection(potential_destinations) #wrong ?
-            
-            print(self.candidates[i])
-        
+                    
         # Bfs to find 
         queue = PriorityQueue()
         queue.put((0, agent_loc))
@@ -242,8 +176,6 @@ class BfsAgent():
             next_node = target
             while (parent[next_node] != agent_loc):
                 next_node = parent[next_node]
-
-            print('target:', target)
             
             self.previous_state = copy.deepcopy(state)
             self.previous_label = self.get_destination_label(agent_loc, next_node)
@@ -301,3 +233,4 @@ class BfsAgent():
         else:
             logger(self.previous_label)
             raise Exception("Unknown direction")
+        

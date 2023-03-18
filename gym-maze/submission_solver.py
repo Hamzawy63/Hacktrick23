@@ -32,7 +32,7 @@ def select_action(state):
 
     global step
     step = step + 1
-    logger("Step: {}".format(step))
+    print("Step: {}".format(step))
 
     actions = ['N', 'S', 'E', 'W']
     random_action = dfs_agent.select_action(state)
@@ -72,11 +72,13 @@ def submission_inference(riddle_solvers):
             break
 
         obv = get_obv_from_response(response)
-        logger(response.json())
+        response_json = response.json()
 
         if not response.json()['riddleType'] == None:
             solution = riddle_solvers[response.json()['riddleType']](response.json()['riddleQuestion'])
             response = solve(agent_id, response.json()['riddleType'], solution)
+
+        print(response_json)
 
 
         # THIS IS A SAMPLE TERMINATING CONDITION WHEN THE AGENT REACHES THE EXIT
